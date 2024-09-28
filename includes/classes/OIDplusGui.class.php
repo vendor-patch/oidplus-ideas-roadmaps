@@ -25,11 +25,17 @@ namespace ViaThinkSoft\OIDplus\Core;
 
 class OIDplusGui extends OIDplusBaseClass {
 
+
+	
 	/**
 	 * @param string $id
 	 * @return array
 	 */
 	public function generateContentPage(string $id): array {
+	   global $oidplus_content_pages_gui_id;
+       global $oidplus_content_pages_gui_out;
+       global $oidplus_content_pages_gui_handled;		
+		
 		$out = array();
 
 		$handled = false;
@@ -37,6 +43,21 @@ class OIDplusGui extends OIDplusBaseClass {
 		$out['icon'] = '';
 		$out['text'] = '';
 
+	      $oidplus_content_pages_gui_id = $id;
+		  $oidplus_content_pages_gui_out = $out;
+		  $oidplus_content_pages_gui_handled = $handled;
+		  if(function_exists('did_action') && !did_action('oidplus_content_pages_gui')){
+			  do_action('oidplus_content_pages_gui', $id);
+		  }
+		$out = $oidplus_content_pages_gui_out;
+		$handled = (bool)$oidplus_content_pages_gui_handled === true ? true : false;
+	 // unset($oidplus_public_pages_gui_out);	 
+	  unset($oidplus_content_pages_gui_id);
+	//	THIS BRFEAKS HOME NO !	unset($handled);		
+		if ($handled){
+			return $out;
+		}
+		
 		foreach (OIDplus::getPagePlugins() as $plugin) {
 			try {
 				$plugin->gui($id, $out, $handled);
@@ -259,12 +280,14 @@ class OIDplusGui extends OIDplusBaseClass {
 	 * @throws OIDplusException
 	 */
 	private function getCommonHeadElems(string $title): array {
+		 global $oidplus_common_head_elements;
+
 		// Get theme color (color of title bar)
 		$design_plugin = OIDplus::getActiveDesignPlugin();
 		$theme_color = is_null($design_plugin) ? '' : $design_plugin->getThemeColor();
 
 		$head_elems = array();
-		$head_elems[] = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+		$head_elems[] = '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">';
 		$head_elems[] = '<meta charset="UTF-8">';
 		if (OIDplus::baseConfig()->getValue('DATABASE_PLUGIN','') !== '') {
 			// Do not remove. This meta tag is acessed by oidplus_base.js
@@ -300,6 +323,13 @@ class OIDplusGui extends OIDplusBaseClass {
 			$head_elems[] = '<link rel="canonical" href="'.htmlentities(OIDplus::canonicalURL().OIDplus::webpath(null, OIDplus::PATH_RELATIVE)).'">';
 		}
 
+		
+		$oidplus_common_head_elements = $head_elems;
+		  if(function_exists('did_action') && !did_action('oidplus_common_head_elements')){
+			  do_action('oidplus_common_head_elements', $theme_color);
+		  }		
+		$head_elems = $oidplus_common_head_elements;
+		
 		return $head_elems;
 	}
 
